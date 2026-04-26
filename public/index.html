@@ -60,8 +60,13 @@
             cursor: pointer;
             font-family: monospace;
             transition: 0.3s;
+            margin-bottom: 10px;
         }
         button:active { transform: scale(0.97); }
+        .reset-btn {
+            background: #ff4444;
+            color: white;
+        }
         .message {
             margin-top: 20px;
             padding: 10px;
@@ -80,12 +85,12 @@
         <div class="quest-text" id="questMessage">Загрузка...</div>
         <input type="text" id="answerInput" placeholder="Введите ответ" autocomplete="off">
         <button id="submitBtn">🔓 ОТПРАВИТЬ 🔓</button>
+        <button id="resetBtn" class="reset-btn">🔄 Сбросить квест</button>
         <div id="messageArea" class="message"></div>
         <footer>QR-код на коробке. Вводите ответы — подарок откроется сам!</footer>
     </div>
 
     <script>
-        // Вопросы для квеста (синхронизированы с сервером)
         const questMessages = [
             "🔐 ВВЕДИТЕ СЕКРЕТНЫЙ КОД:",
             "🎂 СКОЛЬКО ЛЕТ ИМЕНИННИКУ?",
@@ -95,7 +100,6 @@
         
         let currentQuestIndex = 0;
         
-        // Функция обновления статуса с сервера
         async function checkStatus() {
             try {
                 const res = await fetch('/status');
@@ -109,13 +113,10 @@
                     return;
                 }
                 
-                // Обновляем текущий вопрос, если изменился
                 if (data.quest !== currentQuestIndex) {
                     currentQuestIndex = data.quest;
                     if (currentQuestIndex < questMessages.length) {
                         document.getElementById('questMessage').innerHTML = questMessages[currentQuestIndex];
-                    } else {
-                        document.getElementById('questMessage').innerHTML = "🎉 ПОЗДРАВЛЯЮ! 🎉";
                     }
                 }
             } catch(e) {
@@ -123,7 +124,6 @@
             }
         }
         
-        // Отправка ответа на сервер
         document.getElementById('submitBtn').onclick = async () => {
             const input = document.getElementById('answerInput');
             const answer = input.value.trim();
@@ -147,7 +147,6 @@
                     msgDiv.className = "message success";
                     input.value = "";
                     
-                    // Обновляем отображение вопроса
                     if (data.nextQuest < questMessages.length) {
                         currentQuestIndex = data.nextQuest;
                         document.getElementById('questMessage').innerHTML = questMessages[currentQuestIndex];
@@ -170,7 +169,27 @@
             }
         };
         
-        // Загружаем текущий статус при старте
+        // Кнопка сброса квеста
+        document.getElementById('resetBtn').onclick = async () => {
+            if (confirm('Сбросить квест? Все ответы нужно будет вводить заново.')) {
+                try {
+                    const res = await fetch('/reset', { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        currentQuestIndex = 0;
+                        document.getElementById('questMessage').innerHTML = questMessages[0];
+                        document.getElementById('answerInput').disabled = false;
+                        document.getElementById('submitBtn').disabled = false;
+                        document.getElementById('messageArea').innerHTML = "Квест сброшен! Можешь начинать заново.";
+                        document.getElementById('messageArea').className = "message success";
+                        input.value = "";
+                    }
+                } catch(err) {
+                    document.getElementById('messageArea').innerHTML = "❌ Ошибка сброса";
+                }
+            }
+        };
+        
         fetch('/status').then(r => r.json()).then(data => {
             if (data.completed) {
                 document.getElementById('questMessage').innerHTML = "🎁 ПОДАРОК УЖЕ ОТКРЫТ! 🎁";
@@ -184,7 +203,6 @@
             }
         });
         
-        // Проверяем статус каждые 3 секунды
         setInterval(checkStatus, 3000);
     </script>
 </body>
