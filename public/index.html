@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Квест-Коробка</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(0,0,0,0.8);
+            border-radius: 30px;
+            padding: 30px 20px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border: 2px solid #00ff88;
+        }
+        h1 { color: #00ff88; font-size: 24px; margin-bottom: 10px; }
+        .quest-text {
+            background: #0a0f1e;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 20px;
+            color: #fff;
+            border-left: 5px solid #00ff88;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            background: #0a0f1e;
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            color: #00ff88;
+            font-family: monospace;
+            margin-bottom: 15px;
+        }
+        button {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            width: 100%;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:active { transform: scale(0.97); }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #1a1a2e;
+            color: #ffaa00;
+        }
+        .success { color: #00ff88; }
+        .error { color: #ff4444; }
+        footer { margin-top: 20px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎁 СЕКРЕТНАЯ КОРОБКА 🎁</h1>
+        <div class="quest-text" id="questMessage">Загрузка...</div>
+        <input type="text" id="answerInput" placeholder="Введите ответ">
+        <button id="submitBtn">🔓 ОТПРАВИТЬ 🔓</button>
+        <div id="messageArea" class="message"></div>
+        <footer>QR-код внизу коробки. Вводите ответы — подарок откроется сам!</footer>
+    </div>
+
+    <script>
+        const questMessages = [
+            "🔐 ВВЕДИТЕ СЕКРЕТНЫЙ КОД:",
+            "🎂 СКОЛЬКО ЛЕТ ИМЕНИННИКУ?",
+            "👥 Какая машина сейчас у тебя??",
+            "📅 КАКОЙ СЕГОДНЯ ГОД?"
+        ];
+        
+        let currentQuestIndex = 0;
+        
+        async function checkStatus() {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+                if (data.completed) {
+                    document.getElementById('questMessage').innerHTML = "✅ ПОДАРОК ОТКРЫТ! ✅";
+                    document.getElementById('answerInput').disabled = true;
+                    document.getElementById('submitBtn').disabled = true;
+                    document.getElementById('messageArea').innerHTML = "Коробка открылась! Забирай подарок!";
+                }
+            } catch(e) { console.log(e); }
+        }
+        
+        document.getElementById('submitBtn').onclick = async () => {
+            const input = document.getElementById('answerInput');
+            const answer = input.value.trim();
+            if (!answer) return;
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = "⏳ ПРОВЕРКА...";
+            
+            try {
+                const res = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer })
+                });
+                const data = await res.json();
+                
+                const msgDiv = document.getElementById('messageArea');
+                if (data.success) {
+                    msgDiv.innerHTML = "✅ ВЕРНО! Перехожу к следующему заданию...";
+                    msgDiv.className = "message success";
+                    input.value = "";
+                    
+                    if (data.nextQuest < questMessages.length) {
+                        currentQuestIndex = data.nextQuest;
+                        document.getElementById('questMessage').innerHTML = questMessages[currentQuestIndex];
+                    }
+                    
+                    if (data.completed) {
+                        document.getElementById('questMessage').innerHTML = "🎉 ПОЗДРАВЛЯЮ! КОРОБКА ОТКРЫТА! 🎉";
+                        document.getElementById('answerInput').disabled = true;
+                        document.getElementById('submitBtn').disabled = true;
+                    }
+                } else {
+                    msgDiv.innerHTML = "❌ " + (data.message || "НЕВЕРНО! Попробуй ещё.");
+                    msgDiv.className = "message error";
+                }
+            } catch(err) {
+                document.getElementById('messageArea').innerHTML = "❌ Ошибка связи. Попробуй позже.";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🔓 ОТПРАВИТЬ 🔓";
+            }
+        };
+        
+        fetch('/status').then(r => r.json()).then(data => {
+            if (data.completed) {
+                document.getElementById('questMessage').innerHTML = "🎁 ПОДАРОК УЖЕ ОТКРЫТ! 🎁";
+            } else {
+                document.getElementById('questMessage').innerHTML = questMessages[data.current];
+                currentQuestIndex = data.current;
+            }
+        });
+        
+        setInterval(checkStatus, 3000);
+    </script>
+</body>
+</html>
