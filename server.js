@@ -8,7 +8,7 @@ let questState = {
   completed: false
 };
 
-// Вопросы и ответы (ПОМЕНЯЙ НА СВОИ!)
+// Вопросы и ответы 
 const questMessages = [
   { text: "🔐 ВВЕДИТЕ СЕКРЕТНЫЙ КОД:", answer: "21region" },
   { text: "🎂 СКОЛЬКО ЛЕТ ИМЕНИННИКУ?", answer: "30" },
