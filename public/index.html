@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Квест-Коробка</title>
     <style>
         * { box-sizing: border-box; }
@@ -24,6 +24,7 @@
             width: 100%;
             text-align: center;
             border: 2px solid #00ff88;
+            box-shadow: 0 0 30px rgba(0,255,136,0.3);
         }
         h1 { color: #00ff88; font-size: 24px; margin-bottom: 10px; }
         .quest-text {
@@ -58,6 +59,7 @@
             width: 100%;
             cursor: pointer;
             font-family: monospace;
+            transition: 0.3s;
         }
         button:active { transform: scale(0.97); }
         .message {
@@ -76,35 +78,52 @@
     <div class="container">
         <h1>🎁 СЕКРЕТНАЯ КОРОБКА 🎁</h1>
         <div class="quest-text" id="questMessage">Загрузка...</div>
-        <input type="text" id="answerInput" placeholder="Введите ответ">
+        <input type="text" id="answerInput" placeholder="Введите ответ" autocomplete="off">
         <button id="submitBtn">🔓 ОТПРАВИТЬ 🔓</button>
         <div id="messageArea" class="message"></div>
-        <footer>QR-код внизу коробки. Вводите ответы — подарок откроется сам!</footer>
+        <footer>QR-код на коробке. Вводите ответы — подарок откроется сам!</footer>
     </div>
 
     <script>
+        // Вопросы для квеста (синхронизированы с сервером)
         const questMessages = [
             "🔐 ВВЕДИТЕ СЕКРЕТНЫЙ КОД:",
             "🎂 СКОЛЬКО ЛЕТ ИМЕНИННИКУ?",
-            "👥 Какая машина сейчас у тебя??",
+            "👥 Какая машина сейчас у тебя?",
             "📅 КАКОЙ СЕГОДНЯ ГОД?"
         ];
         
         let currentQuestIndex = 0;
         
+        // Функция обновления статуса с сервера
         async function checkStatus() {
             try {
                 const res = await fetch('/status');
                 const data = await res.json();
+                
                 if (data.completed) {
                     document.getElementById('questMessage').innerHTML = "✅ ПОДАРОК ОТКРЫТ! ✅";
                     document.getElementById('answerInput').disabled = true;
                     document.getElementById('submitBtn').disabled = true;
                     document.getElementById('messageArea').innerHTML = "Коробка открылась! Забирай подарок!";
+                    return;
                 }
-            } catch(e) { console.log(e); }
+                
+                // Обновляем текущий вопрос, если изменился
+                if (data.quest !== currentQuestIndex) {
+                    currentQuestIndex = data.quest;
+                    if (currentQuestIndex < questMessages.length) {
+                        document.getElementById('questMessage').innerHTML = questMessages[currentQuestIndex];
+                    } else {
+                        document.getElementById('questMessage').innerHTML = "🎉 ПОЗДРАВЛЯЮ! 🎉";
+                    }
+                }
+            } catch(e) {
+                console.log("Ошибка проверки статуса:", e);
+            }
         }
         
+        // Отправка ответа на сервер
         document.getElementById('submitBtn').onclick = async () => {
             const input = document.getElementById('answerInput');
             const answer = input.value.trim();
@@ -128,6 +147,7 @@
                     msgDiv.className = "message success";
                     input.value = "";
                     
+                    // Обновляем отображение вопроса
                     if (data.nextQuest < questMessages.length) {
                         currentQuestIndex = data.nextQuest;
                         document.getElementById('questMessage').innerHTML = questMessages[currentQuestIndex];
@@ -150,15 +170,21 @@
             }
         };
         
+        // Загружаем текущий статус при старте
         fetch('/status').then(r => r.json()).then(data => {
             if (data.completed) {
                 document.getElementById('questMessage').innerHTML = "🎁 ПОДАРОК УЖЕ ОТКРЫТ! 🎁";
+                document.getElementById('answerInput').disabled = true;
+                document.getElementById('submitBtn').disabled = true;
             } else {
-                document.getElementById('questMessage').innerHTML = questMessages[data.current];
-                currentQuestIndex = data.current;
+                currentQuestIndex = data.quest;
+                if (currentQuestIndex < questMessages.length) {
+                    document.getElementById('questMessage').innerHTML = questMessages[currentQuestIndex];
+                }
             }
         });
         
+        // Проверяем статус каждые 3 секунды
         setInterval(checkStatus, 3000);
     </script>
 </body>
