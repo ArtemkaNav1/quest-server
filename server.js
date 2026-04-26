@@ -58,6 +58,16 @@ app.post('/submit', (req, res) => {
   }
 });
 
+// ========== НОВЫЙ ОБРАБОТЧИК ДЛЯ СБРОСА КВЕСТА ==========
+app.post('/reset', (req, res) => {
+  questState = {
+    current: 0,
+    completed: false
+  };
+  console.log("🔄 КВЕСТ СБРОШЕН!");
+  res.json({ success: true });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
