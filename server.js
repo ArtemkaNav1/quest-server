@@ -35,7 +35,8 @@ app.post('/submit', (req, res) => {
   if (currentIndex < questMessages.length) {
     const correct = questMessages[currentIndex].answer;
     
-    if (answer == correct) {
+    // Сравниваем без учёта регистра и лишних пробелов
+    if (answer.toString().toLowerCase().trim() === correct.toString().toLowerCase().trim()) {
       questState.current++;
       console.log(`✅ Квест ${currentIndex + 1} пройден!`);
       
@@ -57,8 +58,7 @@ app.post('/submit', (req, res) => {
   }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
-  console.log(`📱 Телефон должен открыть: http://[IP_ТВОЕГО_КОМПА]:${PORT}`);
 });
