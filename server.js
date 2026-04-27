@@ -4,11 +4,11 @@ const app = express();
 
 // Хранилище статуса квестов
 let questState = {
-  current: 0,        // 0,1,2,3
+  current: 0,
   completed: false
 };
 
-// Вопросы и ответы 
+// Вопросы и ответы
 const questMessages = [
   { text: "🔐 ВВЕДИТЕ СЕКРЕТНЫЙ КОД:", answer: "21region" },
   { text: "🎂 СКОЛЬКО ЛЕТ ИМЕНИННИКУ?", answer: "30" },
@@ -35,7 +35,6 @@ app.post('/submit', (req, res) => {
   if (currentIndex < questMessages.length) {
     const correct = questMessages[currentIndex].answer;
     
-    // Сравниваем без учёта регистра и лишних пробелов
     if (answer.toString().toLowerCase().trim() === correct.toString().toLowerCase().trim()) {
       questState.current++;
       console.log(`✅ Квест ${currentIndex + 1} пройден!`);
@@ -58,13 +57,23 @@ app.post('/submit', (req, res) => {
   }
 });
 
-// ========== НОВЫЙ ОБРАБОТЧИК ДЛЯ СБРОСА КВЕСТА ==========
+// ========== ОБРАБОТЧИК СБРОСА (POST - для кнопки на сайте) ==========
 app.post('/reset', (req, res) => {
   questState = {
     current: 0,
     completed: false
   };
-  console.log("🔄 КВЕСТ СБРОШЕН!");
+  console.log("🔄 Квест сброшен (POST)!");
+  res.json({ success: true });
+});
+
+// ========== ОБРАБОТЧИК СБРОСА (GET - для ручного ввода в браузере) ==========
+app.get('/reset', (req, res) => {
+  questState = {
+    current: 0,
+    completed: false
+  };
+  console.log("🔄 Квест сброшен (GET)!");
   res.json({ success: true });
 });
 
