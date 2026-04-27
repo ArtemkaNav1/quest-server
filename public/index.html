@@ -169,24 +169,37 @@
             }
         };
         
-        // Кнопка сброса квеста
+        // 🔥 ИСПРАВЛЕННАЯ КНОПКА СБРОСА 🔥
         document.getElementById('resetBtn').onclick = async () => {
-            if (confirm('Сбросить квест? Все ответы нужно будет вводить заново.')) {
-                try {
-                    const res = await fetch('/reset', { method: 'POST' });
-                    const data = await res.json();
-                    if (data.success) {
-                        currentQuestIndex = 0;
-                        document.getElementById('questMessage').innerHTML = questMessages[0];
-                        document.getElementById('answerInput').disabled = false;
-                        document.getElementById('submitBtn').disabled = false;
-                        document.getElementById('messageArea').innerHTML = "Квест сброшен! Можешь начинать заново.";
-                        document.getElementById('messageArea').className = "message success";
-                        input.value = "";
-                    }
-                } catch(err) {
-                    document.getElementById('messageArea').innerHTML = "❌ Ошибка сброса";
+            if (!confirm('Сбросить квест? Все ответы нужно будет вводить заново.')) {
+                return;
+            }
+            
+            const resetBtn = document.getElementById('resetBtn');
+            resetBtn.disabled = true;
+            resetBtn.innerText = "⏳ СБРОС...";
+            
+            try {
+                const response = await fetch('/reset', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Перезагружаем страницу после успешного сброса
+                    window.location.reload();
+                } else {
+                    document.getElementById('messageArea').innerHTML = "❌ Ошибка сброса. Попробуй ещё раз.";
+                    document.getElementById('messageArea').className = "message error";
                 }
+            } catch(err) {
+                console.error("Ошибка сброса:", err);
+                document.getElementById('messageArea').innerHTML = "❌ Ошибка сети. Проверь подключение.";
+                document.getElementById('messageArea').className = "message error";
+            } finally {
+                resetBtn.disabled = false;
+                resetBtn.innerText = "🔄 Сбросить квест";
             }
         };
         
