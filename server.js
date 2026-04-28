@@ -50,7 +50,7 @@ app.post('/submit', (req, res) => {
         completed: questState.completed 
       });
     } else {
-      res.json({ success: false, message: "Хуй тебе, попробуй ещё!" });
+      res.json({ success: false, message: "Ебать ты лох,не верно, попробуй ещё!" });
     }
   } else {
     res.json({ success: false, message: "Квесты уже завершены!" });
